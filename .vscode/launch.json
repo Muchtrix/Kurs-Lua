@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lua",
+            "request": "launch",
+            "name": "Lua Launch",
+            "program": "${file}",
+            "cwd": "${workspaceRoot}",
+            "stopOnEntry": false
+        },
+        {
+            "type": "lua",
+            "request": "attach",
+            "name": "Lua Attach",
+            "host": "localhost",
+            "port": 21110,
+            "sourceRoot": "${workspaceRoot}",
+            "stopOnEntry": true
+        }
+    ]
+}
