@@ -1,3 +1,7 @@
+--[[
+    Wiktor Adamski
+    Kurs Lua, lista 5 - zadanie 2
+--]]
 local Vector = {}
 local mt = {__metatable = 'Vector'}
 
@@ -49,6 +53,14 @@ function mt.__div(v, s)
     if type(s) == 'number' then
         local res = {}
         for i = 1, v.n do res[i] = v[i] / s end
+        return Vector(res)
+    else error('Invalid parameters for vector division', 2) end
+end
+
+function mt.__idiv(v, s)
+    if type(s) == 'number' then
+        local res = {}
+        for i = 1, v.n do res[i] = v[i] // s end
         return Vector(res)
     else error('Invalid parameters for vector division', 2) end
 end

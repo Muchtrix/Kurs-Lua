@@ -18,9 +18,7 @@ end
 function mt.__add(fr1, fr2)
     if type(fr1) == 'number' then fr1 = Frac.toFrac(fr1) end
     if type(fr2) == 'number' then fr2 = Frac.toFrac(fr2) end
-    local res = Frac(fr1.num * fr2.den + fr2.num * fr1.den, fr1.den * fr2.den)
-    normalize(res)
-    return res
+    return Frac(fr1.num * fr2.den + fr2.num * fr1.den, fr1.den * fr2.den)
 end
 
 function mt.__unm(fr)
@@ -32,18 +30,46 @@ function mt.__sub(fr1, fr2)
 end
 
 function mt.__mul(fr1, fr2)
-    res = Frac(fr1.num * fr2.num, fr1.den * fr2.den)
-    normalize(res)
-    return res
+    if type(fr1) == 'number' then fr1 = Frac.toFrac(fr1) end
+    if type(fr2) == 'number' then fr2 = Frac.toFrac(fr2) end
+    return Frac(fr1.num * fr2.num, fr1.den * fr2.den)
 end
 
 function mt.__div(fr1, fr2)
+    if type(fr1) == 'number' then fr1 = Frac.toFrac(fr1) end
+    if type(fr2) == 'number' then fr2 = Frac.toFrac(fr2) end
     return fr1 * Frac(fr2.den, fr2.num)
 end
 
 function mt.__pow(fr, ex)
     if type(ex) ~= 'number' or math.floor(ex) ~= ex then error('Wrong argument 2', 2)
     else return Frac(math.floor(fr.num ^ ex), math.floor(fr.den ^ ex)) end
+end
+
+-- Operacje bitowe ------------------------------------------------------------
+
+function mt.__band(fr1, fr2)
+    return Frac(fr1.num & fr2.num, fr1.den & fr2.den)
+end
+
+function mt.__bor(fr1, fr2)
+    return Frac(fr1.num | fr2.num, fr1.den | fr2.den)
+end
+
+function mt.__bxor(fr1, fr2)
+    return Frac(fr1.num ~ fr2.num, fr1.den ~ fr2.den)
+end
+
+function mt.__bnot(fr)
+    return Frac(~ fr.num, ~ fr.den)
+end
+
+function mt.__shl(fr1, num)
+    return Frac(fr1.num << num, fr1.den)
+end
+
+function mt.__shr(fr1, num)
+    return Frac(fr1.num >> num, fr1.den)
 end
 
 -- Operatory porównania -------------------------------------------------------
