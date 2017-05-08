@@ -101,6 +101,7 @@ int main(int argc, char** argv){
             int x = (int)lua_tointegerx(B, -2, &isnum1), y = (int)lua_tointegerx(B, -1, &isnum2);
             if(!isnum1 || !isnum2)
                 error(B, "Funkcja nie zwróciła 2 liczb całkowitych!");
+            lua_pop(B, 2);
             
             if(1 > x || x > 3 || 1 > y || y > 3)
                 error(B, "Zwrócono indeksy spoza tablicy");
