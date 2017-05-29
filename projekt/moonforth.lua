@@ -1,5 +1,6 @@
 local moonforth = {}
 local mt = {__metatable = 'MoonForth', __index = moonforth}
+local pointer = require 'pointer'
 
 local function push(stack, var)
     stack[#stack + 1] = var
@@ -11,72 +12,193 @@ local function pop(stack)
     return var
 end
 
+local function printTable(table)
+    local res = '{'
+    for i, v in pairs(table) do
+        res = res .. ' ' .. i .. ' = ' .. ((type(v) == 'table') and printTable(v) or tostring(v)) .. ','
+    end
+    res = res:gsub(',$', '}')
+    return res
+end
+
 local primitives = {
     ['+'] = {
-        immediate = false,
         body = function(forth)
             local a, b = forth:popStack2()
             forth:pushStack(a + b)
         end
     },
     ['-'] = {
-        immediate = false,
         body = function(forth)
             local a, b = forth:popStack2()
             forth:pushStack(a - b)
         end
     },
     ['*'] = {
-        immediate = false,
         body = function(forth)
             local a, b = forth:popStack2()
             forth:pushStack(a * b)
         end
     },
     ['/'] = {
-        immediate = false,
         body = function(forth)
             local a, b = forth:popStack2()
             forth:pushStack(a / b)
         end
     },
     ['.'] = {
-        immediate = false,
         body = function(forth) io.write(forth:popStack()) end
     },
     ['cr'] = {
-        immediate = false,
         body = function() print "" end
     },
     [':'] = {
         immediate = true,
         body = function(forth)
             local newWord = forth:getNextWord()
-            forth.compileMode, forth.compileBuffer, forth.dictionary[newWord] = true, newWord, {immediate = false, body = {}} 
+            forth.compileMode = true
+            forth.dictionaryPointer.table = newWord
+            forth.dictionaryPointer.index = 0
+            forth.dictionary[newWord] = {immediate = false, body = {}}
         end
     },
-    ['STOP'] = {
-        immediate = false,
+    ['exit'] = {
         body = function(forth)
             local ret = pop(forth.returnStack)
             forth.currentWordstream, forth.currentInstruction = ret.wordStream, ret.pos
-            end
+        end
     },
     [';'] = {
         immediate = true,
         body = function(forth)
-            forth:compileToken('STOP')
+            forth:compileToken('exit')
             forth.compileMode = false
-            end
+        end
     },
     ['dup'] = {
-        immediate = false,
         body = function(forth) 
             local a = forth:popStack()
              forth:pushStack(a)
              forth:pushStack(a)
         end
+    },
+    ['drop'] = {
+        body = function(forth)
+            forth:popStack()
+        end
+    },
+    ['immediate'] = {
+        immediate = true,
+        body = function(forth)
+            forth.dictionary[forth.dictionaryPointer.table].immediate = true
+        end
+    },
+    ['\\'] = {
+        immediate = true,
+        body = function(forth)
+            forth.wordBuffer = {}
+        end
+    },
+    ['and'] = {
+        body = function(forth)
+            local a, b = forth:popStack2()
+            forth:pushStack(a & b)
+        end
+    },
+    ['or'] = {
+        body = function(forth)
+            local a, b = forth:popStack2()
+            forth:pushStack(a | b)
+        end
+    },
+    ['xor'] = {
+        body = function(forth)
+            local a, b = forth:popStack2()
+            forth:pushStack(a ~ b)
+        end
+    },
+    ['invert'] = {
+        body = function(forth)
+            forth:pushStack(~ forth:popStack())
+        end
+    },
+    ['swap'] = {
+        body = function(forth)
+            local a, b = forth:popStack2()
+            forth:pushStack(b)
+            forth:pushStack(a)
+        end
+    },
+    ['r>'] = {
+        body = function(forth)
+            forth:pushStack(pop(forth.returnStack))
+        end
+    },
+    ['>r'] = {
+        body = function(forth)
+            push(forth.returnStack, forth:popStack())
+        end
+    },
+    ['branch'] = {
+        body = function(forth)
+            local jumpV = forth:getNextWord()
+            forth.currentInstruction = forth.currentInstruction + jumpV
+        end
+    },
+    ['?branch'] = {
+        body = function(forth)
+            local jumpV = forth:getNextWord()
+            if forth:popStack() == 0 then forth.currentInstruction = forth.currentInstruction + jumpV end
+        end
+    },
+    ['here'] = {
+        body = function(forth)
+            forth:pushStack(pointer(forth.dictionaryPointer.table, forth.dictionaryPointer.index + 1))
+        end
+    },
+    ['\''] = {
+        body = function(forth)
+            forth:pushStack(forth:getNextWord())
+        end
+    },
+    [','] = {
+        body = function(forth)
+            forth:compileToken(forth:popStack())
+        end
+    },
+    ['!'] = {
+        body = function(forth)
+            local x, adress = forth:popStack2()
+            forth.dictionary[adress.table].body[adress.index] = x
+        end
+    },
+    ['stack'] = {
+        immediate = true,
+        body = function(forth)
+            print '---Stack dump---'
+            for i = #forth.variableStack, 1, -1 do
+                local v = forth.variableStack[i]
+                print(i .. ':',type(v),  type(v) == 'table' and printTable(v) or v)
+            end
+            print '---Stack dump end ---'
+        end
+    },
+    ['word-info'] = {
+        immediate = true,
+        body = function(forth)
+            local word = forth:getNextWord()
+            print(word, ':', printTable(forth.dictionary[word]))
+        end
     }
+}
+
+moonforth.defaultInit = {
+    ': rot >r swap r> swap ;',
+    ': -rot rot rot ;',
+    ': >mark here \' 0 , ;',
+    ': if immediate \' ?branch , >mark ;',
+    ': else immediate \' branch , >mark swap dup here swap - 1 - swap ! ;',
+    ': then immediate dup here swap - 1 - swap ! ;'
 }
 
 function moonforth:pushStack(value)
@@ -98,7 +220,8 @@ function moonforth:loadWordBuffer(tokens)
 end
 
 function moonforth:compileToken(token)
-    self.dictionary[self.compileBuffer].body[#(self.dictionary[self.compileBuffer].body) + 1] = token
+    self.dictionaryPointer.index = self.dictionaryPointer.index + 1
+    self.dictionary[self.dictionaryPointer.table].body[self.dictionaryPointer.index] = token
 end
 
 function moonforth:getNextWord()
@@ -145,26 +268,40 @@ end
 function moonforth:executeLine(line)
     self:loadWordBuffer(moonforth.tokenizer(line))
 
-    while (#self.returnStack > 0) or self.currentInstruction < (#self.wordBuffer) do 
+    while self.currentInstruction < #(self.currentWordstream and self.dictionary[self.currentWordstream].body or self.wordBuffer) do 
         local token = self:getNextWord()
-        if self:execute(token) then print (token .. '?') end
+        local override = self.currentWordstream ~= nil
+        if self:execute(token, override) then print (token .. '?') end
     end
     self.currentInstruction = 0
 end
 
-function moonforth:new()
+function moonforth:new(init)
+    local initialProgram = init or moonforth.defaultInit
     local obj = {
         variableStack = {},
         dictionary = {},
         compileMode = false,
-        compileBuffer = nil,
+        dictionaryPointer = pointer(null, 0),
         wordBuffer = {},
         currentWordstream = nil,
         currentInstruction = 0,
         returnStack = {}
     }
-    return setmetatable(obj, mt)
+    setmetatable(obj, mt)
+    for _, v in ipairs(initialProgram) do obj:executeLine(v) end
+    return obj
 end
 
-setmetatable(moonforth, {__call = moonforth.new, __metatable = 'Modification Protection'})
+function moonforth.findMatching(seq, startPos, incWord, decWord)
+    local depth = 0
+    for i = startPos, #seq do
+        if     seq[i] == incWord then depth = depth + 1 
+        elseif seq[i] == decWord then depth = depth - 1 end
+        if depth == -1 then return end
+    end
+    return 0
+end
+
+setmetatable(moonforth, {__call = moonforth.new, __metatable = 'Moonforth module'})
 return moonforth
