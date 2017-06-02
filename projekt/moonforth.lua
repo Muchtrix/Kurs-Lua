@@ -22,6 +22,7 @@ local function printTable(table)
 end
 
 local primitives = {
+    -- Instrukcje arytmetyczne
     ['+'] = {
         body = function(forth)
             local a, b = forth:popStack2()
@@ -46,57 +47,22 @@ local primitives = {
             forth:pushStack(a / b)
         end
     },
-    ['.'] = {
-        body = function(forth) io.write(forth:popStack()) end
-    },
-    ['cr'] = {
-        body = function() print "" end
-    },
-    [':'] = {
-        immediate = true,
+    ['='] = {
         body = function(forth)
-            local newWord = forth:getNextWord()
-            forth.compileMode = true
-            forth.dictionaryPointer.table = newWord
-            forth.dictionaryPointer.index = 0
-            forth.dictionary[newWord] = {immediate = false, body = {}}
+            local a, b = forth:popStack2()
+            forth:pushStack(a == b and 1 or 0)
         end
     },
-    ['exit'] = {
+    ['>'] = {
         body = function(forth)
-            local ret = pop(forth.returnStack)
-            forth.currentWordstream, forth.currentInstruction = ret.wordStream, ret.pos
+            local a, b = forth:popStack2()
+            forth:pushStack(a > b and 1 or 0)
         end
     },
-    [';'] = {
-        immediate = true,
+    ['<'] = {
         body = function(forth)
-            forth:compileToken('exit')
-            forth.compileMode = false
-        end
-    },
-    ['dup'] = {
-        body = function(forth) 
-            local a = forth:popStack()
-             forth:pushStack(a)
-             forth:pushStack(a)
-        end
-    },
-    ['drop'] = {
-        body = function(forth)
-            forth:popStack()
-        end
-    },
-    ['immediate'] = {
-        immediate = true,
-        body = function(forth)
-            forth.dictionary[forth.dictionaryPointer.table].immediate = true
-        end
-    },
-    ['\\'] = {
-        immediate = true,
-        body = function(forth)
-            forth.wordBuffer = {}
+            local a, b = forth:popStack2()
+            forth:pushStack(a < b and 1 or 0)
         end
     },
     ['and'] = {
@@ -122,9 +88,88 @@ local primitives = {
             forth:pushStack(~ forth:popStack())
         end
     },
+    -- Instrukcje We/wy
+    ['.'] = {
+        body = function(forth) io.write(forth:popStack() .. ' ') end
+    },
+    ['emit'] = {
+        body = function(forth) io.write(string.char(forth:popStack())) end
+    },
+    ['cr'] = {
+        body = function() print "" end
+    },
+    -- Instrukcje sterujące
+    [':'] = {
+        immediate = true,
+        body = function(forth)
+            local newWord = forth:getNextWord()
+            forth.compileMode = true
+            forth.dictionaryPointer.table = newWord
+            forth.dictionaryPointer.index = 0
+            forth.dictionary[newWord] = {immediate = false, body = {}}
+        end
+    },
+    ['exit'] = {
+        body = function(forth)
+            local ret = pop(forth.returnStack)
+            forth.currentWordstream, forth.currentInstruction = ret.wordStream, ret.pos
+        end
+    },
+    [';'] = {
+        immediate = true,
+        body = function(forth)
+            forth:compileToken('exit')
+            forth.compileMode = false
+        end
+    },
+    ['immediate'] = {
+        immediate = true,
+        body = function(forth)
+            forth.dictionary[forth.dictionaryPointer.table].immediate = true
+        end
+    },
+    ['\\'] = {
+        immediate = true,
+        body = function(forth)
+            forth.wordBuffer = {}
+        end
+    },
+    ['branch'] = {
+        body = function(forth)
+            local jumpV = forth:getNextWord()
+            forth.currentInstruction = forth.currentInstruction + jumpV
+        end
+    },
+    ['?branch'] = {
+        body = function(forth)
+            local jumpV = forth:getNextWord()
+            if forth:popStack() == 0 then forth.currentInstruction = forth.currentInstruction + jumpV end
+        end
+    },
+    -- Instrukcje modyfikujące stos
+    ['dup'] = {
+        body = function(forth) 
+            local a = forth:popStack()
+             forth:pushStack(a)
+             forth:pushStack(a)
+        end
+    },
+    ['drop'] = {
+        body = function(forth)
+            forth:popStack()
+        end
+    },
     ['swap'] = {
         body = function(forth)
             local a, b = forth:popStack2()
+            forth:pushStack(b)
+            forth:pushStack(a)
+        end
+    },
+    ['over'] = {
+        body = function(forth)
+            local a, b = forth:popStack2()
+            forth:pushStack(a)
             forth:pushStack(b)
             forth:pushStack(a)
         end
@@ -139,16 +184,9 @@ local primitives = {
             push(forth.returnStack, forth:popStack())
         end
     },
-    ['branch'] = {
+    ["'('"] = {
         body = function(forth)
-            local jumpV = forth:getNextWord()
-            forth.currentInstruction = forth.currentInstruction + jumpV
-        end
-    },
-    ['?branch'] = {
-        body = function(forth)
-            local jumpV = forth:getNextWord()
-            if forth:popStack() == 0 then forth.currentInstruction = forth.currentInstruction + jumpV end
+            forth:pushStack(('('):byte())
         end
     },
     ['here'] = {
@@ -172,6 +210,7 @@ local primitives = {
             forth.dictionary[adress.table].body[adress.index] = x
         end
     },
+    -- Instrukcje debugujące
     ['stack'] = {
         immediate = true,
         body = function(forth)
@@ -198,7 +237,9 @@ moonforth.defaultInit = {
     ': >mark here \' 0 , ;',
     ': if immediate \' ?branch , >mark ;',
     ': else immediate \' branch , >mark swap dup here swap - 1 - swap ! ;',
-    ': then immediate dup here swap - 1 - swap ! ;'
+    ': then immediate dup here swap - 1 - swap ! ;',
+    ': begin immediate here ;',
+    ': until immediate \' ?branch , here - 1 - , ;'
 }
 
 function moonforth:pushStack(value)
