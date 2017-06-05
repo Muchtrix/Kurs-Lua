@@ -30,9 +30,9 @@ TestMoonForth = {}
 
     function TestMoonForth:testLoop()
         lu.assertEquals(self.m:executeLine(': dup2 over over ;'), '')
-        lu.assertEquals(self.m:executeLine(': loop begin dup . 1 - dup2 > repeat ;'), 'repeat?')
-        lu.assertEquals(self.m:executeLine('until ;'), '')
+        lu.assertEquals(self.m:executeLine(': loop begin dup . 1 - dup2 > until ;'), '')
         lu.assertEquals(self.m:executeLine('0 5 loop'), '5 4 3 2 1 0 ')
+        lu.assertEquals(self.m:executeLine('9 12 loop'), '12 11 10 9 ')
     end
 
 os.exit( lu.LuaUnit:runSuite('--output', 'tap') )

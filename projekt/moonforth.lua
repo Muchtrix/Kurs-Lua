@@ -193,7 +193,7 @@ local primitives = {
     },
     ['here'] = {
         body = function(forth)
-            forth:pushStack(pointer(forth.dictionaryPointer.table, forth.dictionaryPointer.index + 1))
+            forth:pushStack(pointer(forth.dictionaryPointer.table, forth.dictionaryPointer.index))
         end
     },
     ['\''] = {
@@ -206,10 +206,30 @@ local primitives = {
             forth:compileToken(forth:popStack())
         end
     },
+    ['@'] = {
+        body = function(forth)
+            local adress = forth:popStack()
+            forth:pushStack(forth.dictionary[adress.table].body[adress.index])
+        end
+    },
     ['!'] = {
         body = function(forth)
             local x, adress = forth:popStack2()
             forth.dictionary[adress.table].body[adress.index] = x
+        end
+    },
+    ['variable'] = {
+        immediate = true,
+        body = function(forth)
+            local varName = forth:getNextWord()
+            forth.dictionary[varName] = {
+                immediate = false,
+                body = {
+                    '\'',
+                    pointer(varName, 4),
+                    'exit'
+                }
+            }
         end
     },
     -- Instrukcje debugujące
@@ -236,12 +256,13 @@ local primitives = {
 moonforth.defaultInit = {
     ': rot >r swap r> swap ;',
     ': -rot rot rot ;',
-    ': >mark here \' 0 , ;',
+    ': >mark \' 0 , here ;',
     ': if immediate \' ?branch , >mark ;',
-    ': else immediate \' branch , >mark swap dup here swap - 1 - swap ! ;',
-    ': then immediate dup here swap - 1 - swap ! ;',
+    ': else immediate \' branch , >mark swap dup here swap - swap ! ;',
+    ': then immediate dup here swap - swap ! ;',
     ': begin immediate here ;',
-    ': until immediate \' ?branch , here - 1 - , ;'
+    ': until immediate \' ?branch , here - 1 - , ;',
+    ': ? @ . ;'
 }
 
 function moonforth:pushStack(value)
