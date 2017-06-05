@@ -11,6 +11,6 @@ print [[
 io.write (m.compileMode and 'C> ' or 'I> ')
 
 for linijka in io.lines() do
-    m:executeLine(linijka)
+    io.write (m:executeLine(linijka))
     io.write (m.compileMode and 'C> ' or 'I> ')
 end

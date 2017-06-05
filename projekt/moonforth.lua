@@ -44,7 +44,7 @@ local primitives = {
     ['/'] = {
         body = function(forth)
             local a, b = forth:popStack2()
-            forth:pushStack(a / b)
+            forth:pushStack(a // b)
         end
     },
     ['='] = {
@@ -90,13 +90,15 @@ local primitives = {
     },
     -- Instrukcje We/wy
     ['.'] = {
-        body = function(forth) io.write(forth:popStack() .. ' ') end
+        body = function(forth)
+            forth.printBuffer = forth.printBuffer .. forth:popStack() .. ' '
+        end
     },
     ['emit'] = {
-        body = function(forth) io.write(string.char(forth:popStack())) end
+        body = function(forth) forth.printBuffer = forth.printBuffer .. string.char(forth:popStack()) end
     },
     ['cr'] = {
-        body = function() print "" end
+        body = function(forth) forth.printBuffer = forth.printBuffer .. '\n' end
     },
     -- Instrukcje sterujące
     [':'] = {
@@ -308,13 +310,18 @@ end
 
 function moonforth:executeLine(line)
     self:loadWordBuffer(moonforth.tokenizer(line))
+    self.printBuffer = ""
 
     while self.currentInstruction < #(self.currentWordstream and self.dictionary[self.currentWordstream].body or self.wordBuffer) do 
         local token = self:getNextWord()
         local override = self.currentWordstream ~= nil
-        if self:execute(token, override) then print (token .. '?') end
+        if self:execute(token, override) then 
+            self.printBuffer = self.printBuffer .. token .. '?\n'
+            self.wordBuffer = {}
+        end
     end
     self.currentInstruction = 0
+    return self.printBuffer
 end
 
 function moonforth:new(init)
@@ -327,7 +334,8 @@ function moonforth:new(init)
         wordBuffer = {},
         currentWordstream = nil,
         currentInstruction = 0,
-        returnStack = {}
+        returnStack = {},
+        printBuffer = ''
     }
     setmetatable(obj, mt)
     for _, v in ipairs(initialProgram) do obj:executeLine(v) end
