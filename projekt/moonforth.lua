@@ -236,19 +236,19 @@ local primitives = {
     ['stack'] = {
         immediate = true,
         body = function(forth)
-            print '---Stack dump---'
+            print '------- Stack dump ------'
             for i = #forth.variableStack, 1, -1 do
                 local v = forth.variableStack[i]
                 print(i .. ':',type(v),  type(v) == 'table' and printTable(v) or v)
             end
-            print '---Stack dump end ---'
+            print '--- End of stack dump ---'
         end
     },
     ['word-info'] = {
         immediate = true,
         body = function(forth)
             local word = forth:getNextWord()
-            print(word, ':', printTable(forth.dictionary[word]))
+            print(word, ':', forth.dictionary[word] and printTable(forth.dictionary[word]) or 'This word is either primitive or not defined')
         end
     }
 }
@@ -262,7 +262,8 @@ moonforth.defaultInit = {
     ': then immediate dup here swap - swap ! ;',
     ': begin immediate here ;',
     ': until immediate \' ?branch , here - 1 - , ;',
-    ': ? @ . ;'
+    ': ? @ . ;',
+    ': +! dup -rot @ + swap ! ;'
 }
 
 function moonforth:pushStack(value)

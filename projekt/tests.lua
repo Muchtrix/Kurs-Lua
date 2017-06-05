@@ -35,4 +35,12 @@ TestMoonForth = {}
         lu.assertEquals(self.m:executeLine('9 12 loop'), '12 11 10 9 ')
     end
 
+    function TestMoonForth:testVariable()
+        lu.assertEquals(self.m:executeLine('variable test-variable'), '')
+        lu.assertEquals(self.m:executeLine('10 test-variable !'), '')
+        lu.assertEquals(self.m:executeLine('test-variable ?'), '10 ')
+        lu.assertEquals(self.m:executeLine('11 test-variable +!'), '')
+        lu.assertEquals(self.m:executeLine('test-variable ?'), '21 ')
+    end
+
 os.exit( lu.LuaUnit:runSuite('--output', 'tap') )
