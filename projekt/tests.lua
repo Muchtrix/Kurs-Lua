@@ -1,6 +1,5 @@
 #!/usr/bin/env lua5.3
 moonforth = require 'moonforth'
-
 lu = require 'luaunit'
 
 TestMoonForth = {}
@@ -18,7 +17,7 @@ TestMoonForth = {}
     end
 
     function TestMoonForth:testNewDefinition()
-        lu.assertEquals(self.m:executeLine('5 sqr .'), 'sqr?\n')
+        lu.assertEquals(self.m:executeLine('5 sqr .'), 'sqr?')
         lu.assertEquals(self.m:executeLine(': sqr dup * ;'), '')
         lu.assertEquals(self.m:executeLine('sqr .'), '25 ')        
     end
@@ -29,6 +28,11 @@ TestMoonForth = {}
         lu.assertEquals(self.m:executeLine('0 test'), '2 ')
     end
 
-local runner = lu.LuaUnit.new()
-runner:setOutputType('tap')
-os.exit( runner:runSuite() )
+    function TestMoonForth:testLoop()
+        lu.assertEquals(self.m:executeLine(': dup2 over over ;'), '')
+        lu.assertEquals(self.m:executeLine(': loop begin dup . 1 - dup2 > repeat ;'), 'repeat?')
+        lu.assertEquals(self.m:executeLine('until ;'), '')
+        lu.assertEquals(self.m:executeLine('0 5 loop'), '5 4 3 2 1 0 ')
+    end
+
+os.exit( lu.LuaUnit:runSuite('--output', 'tap') )

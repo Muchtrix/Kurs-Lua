@@ -316,7 +316,7 @@ function moonforth:executeLine(line)
         local token = self:getNextWord()
         local override = self.currentWordstream ~= nil
         if self:execute(token, override) then 
-            self.printBuffer = self.printBuffer .. token .. '?\n'
+            self.printBuffer = self.printBuffer .. token .. '?'
             self.wordBuffer = {}
         end
     end

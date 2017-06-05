@@ -12,6 +12,7 @@ print [[
 io.write (m.compileMode and 'C> ' or 'I> ')
 
 for linijka in io.lines() do
-    io.write (m:executeLine(linijka))
+    local res = m:executeLine(linijka)
+    if res ~= '' then print(res) end
     io.write (m.compileMode and 'C> ' or 'I> ')
 end
