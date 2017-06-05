@@ -1,4 +1,3 @@
-#!/usr/bin/env lua5.3
 moonforth = require 'moonforth'
 m = moonforth()
 
@@ -7,12 +6,9 @@ print [[
 |     |___ ___ ___|   __|___ ___| |_| |_ 
 | | | | . | . |   |   __| . |  _|  _|   |
 |_|_|_|___|___|_|_|__|  |___|_| |_| |_|_|
-
+            --- THE REPL ---
 ]]
-io.write (m.compileMode and 'C> ' or 'I> ')
-
-for linijka in io.lines() do
-    local res = m:executeLine(linijka)
+execLine = function(line)
+    local res = m:executeLine(line)
     if res ~= '' then print(res) end
-    io.write (m.compileMode and 'C> ' or 'I> ')
 end

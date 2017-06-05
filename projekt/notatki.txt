@@ -1,0 +1,12 @@
+Z specyfikacji ANS Forth:
+
+6.1.1700 IF 
+CORE 
+	Interpretation: Interpretation semantics for this word are undefined.
+	Compilation: ( C: -- orig )
+Put the location of a new unresolved forward reference orig onto the control flow stack. Append the run-time semantics given below to the current definition. The semantics are incomplete until orig is resolved, e.g., by THEN or ELSE.
+
+	Run-time: ( x -- )
+If all bits of x are zero, continue execution at the location specified by the resolution of orig.
+
+See: 3.2.3.2 Control flow stack, A.6.1.1700 IF

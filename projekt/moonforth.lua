@@ -289,6 +289,16 @@ function moonforth:compileToken(token)
     self.dictionary[self.dictionaryPointer.table].body[self.dictionaryPointer.index] = token
 end
 
+-- function moonforth:getNextChar()
+--     local current = self.currentWordstream 
+--         and self.dictionary[self.currentWordstream].body[self.currentInstruction + 1]
+--         or self.wordBuffer[self.currentInstruction + 1]
+--     if current = "" then self:getNextWord() return ' '
+--     else 
+--         local nextChar = string.su
+--     end
+-- end
+
 function moonforth:getNextWord()
     self.currentInstruction = self.currentInstruction + 1
     return self.currentWordstream 
