@@ -256,17 +256,20 @@ local primitives = {
 moonforth.defaultInit = {
     ': rot >r swap r> swap ;',
     ': -rot rot rot ;',
-    ': 2dup over over ;',
-    ': >mark \' 0 , here ;',
-    ': if immediate \' ?branch , >mark r> swap >r >r ;',
-    ': else immediate \' branch , r> r> swap >r >mark r> swap >r >r swap dup here swap - swap ! ;',
+    ': dup2 over over ;',
+    ': <> = 0 = ;',
+    ": >mark ' 0 , here ;",
+    ": if immediate ' ?branch , >mark r> swap >r >r ;",
+    ": else immediate ' branch , r> r> swap >r >mark r> swap >r >r swap dup here swap - swap ! ;",
     ': then immediate r> r> swap >r dup here swap - swap ! ;',
     ': begin immediate here r> swap >r >r ;',
-    ': until immediate \' ?branch , r> r> swap >r here - 1 - , ;',
+    ": until immediate ' ?branch , r> r> swap >r here - 1 - , ;",
     ': ? @ . ;',
     ': +! dup -rot @ + swap ! ;',
-    ': min 2dup > if swap then drop ;',
-    ': max 2dup < if swap then drop ;'
+    ': min dup2 > if swap then drop ;',
+    ': max dup2 < if swap then drop ;',
+    ': inc 1 + ;',
+    ': inc<? inc dup2 < ;'
 }
 
 function moonforth:pushStack(value)
@@ -291,16 +294,6 @@ function moonforth:compileToken(token)
     self.dictionaryPointer.index = self.dictionaryPointer.index + 1
     self.dictionary[self.dictionaryPointer.table].body[self.dictionaryPointer.index] = token
 end
-
--- function moonforth:getNextChar()
---     local current = self.currentWordstream 
---         and self.dictionary[self.currentWordstream].body[self.currentInstruction + 1]
---         or self.wordBuffer[self.currentInstruction + 1]
---     if current = "" then self:getNextWord() return ' '
---     else 
---         local nextChar = string.su
---     end
--- end
 
 function moonforth:getNextWord()
     self.currentInstruction = self.currentInstruction + 1
