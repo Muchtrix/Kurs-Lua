@@ -23,6 +23,7 @@ int main(){
         lua_getglobal(L, "execLine");
         lua_pushstring(L, linijka);
         lua_call(L, 1, 0);
+        add_history(linijka);
     }
     return 0;
 }
