@@ -256,14 +256,17 @@ local primitives = {
 moonforth.defaultInit = {
     ': rot >r swap r> swap ;',
     ': -rot rot rot ;',
+    ': 2dup over over ;',
     ': >mark \' 0 , here ;',
-    ': if immediate \' ?branch , >mark ;',
-    ': else immediate \' branch , >mark swap dup here swap - swap ! ;',
-    ': then immediate dup here swap - swap ! ;',
-    ': begin immediate here ;',
-    ': until immediate \' ?branch , here - 1 - , ;',
+    ': if immediate \' ?branch , >mark r> swap >r >r ;',
+    ': else immediate \' branch , r> r> swap >r >mark r> swap >r >r swap dup here swap - swap ! ;',
+    ': then immediate r> r> swap >r dup here swap - swap ! ;',
+    ': begin immediate here r> swap >r >r ;',
+    ': until immediate \' ?branch , r> r> swap >r here - 1 - , ;',
     ': ? @ . ;',
-    ': +! dup -rot @ + swap ! ;'
+    ': +! dup -rot @ + swap ! ;',
+    ': min 2dup > if swap then drop ;',
+    ': max 2dup < if swap then drop ;'
 }
 
 function moonforth:pushStack(value)
