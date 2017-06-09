@@ -196,7 +196,7 @@ local primitives = {
             forth:pushStack(pointer(forth.dictionaryPointer.table, forth.dictionaryPointer.index))
         end
     },
-    ['\''] = {
+    ["'"] = {
         body = function(forth)
             forth:pushStack(forth:getNextWord())
         end
@@ -254,10 +254,17 @@ local primitives = {
 }
 
 moonforth.defaultInit = {
+    ': tuck swap >r dup r> swap ;',
+    ': nip swap drop ;',
     ': rot >r swap r> swap ;',
     ': -rot rot rot ;',
     ': dup2 over over ;',
-    ': <> = 0 = ;',
+    ': 0= 0 = ;',
+    ': <> = 0= ;',
+    ': not 0= ;',
+    ': >= < not ;',
+    ': <= > not ;',
+    ': logical not not ;',
     ": >mark ' 0 , here ;",
     ": if immediate ' ?branch , >mark r> swap >r >r ;",
     ": else immediate ' branch , r> r> swap >r >mark r> swap >r >r swap dup here swap - swap ! ;",
@@ -269,7 +276,12 @@ moonforth.defaultInit = {
     ': min dup2 > if swap then drop ;',
     ': max dup2 < if swap then drop ;',
     ': inc 1 + ;',
-    ': inc<? inc dup2 < ;'
+    ': inc<? inc dup2 < ;',
+    'variable i',
+    -- Poniższa implementacja pętli for nie jest zgodna ze standardem, ale chciałem ją i tak pozostawić
+    ': for swap i ! ;', -- (a b --- ) for i in [a, b]
+    ": do immediate here r> swap >r >r ;", -- exapmle: : test 0 10 for do i ? done ;
+    ": done immediate ' dup , ' 1 , ' i , ' +! , ' i , ' @ , ' < , ' ?branch , r> r> swap >r here - 1 - , ;"
 }
 
 function moonforth:pushStack(value)
@@ -316,7 +328,7 @@ function moonforth:execute(token, overrideCompile)
             return
         end
         local def = self.dictionary[token] and self.dictionary[token] or primitives[token]
-        if def == nil then return true end
+        if def == nil then error(token .. '?', 0) end
         if def.immediate then self:execute(token, true)
         else self:compileToken(token)
         end
@@ -331,7 +343,7 @@ function moonforth:execute(token, overrideCompile)
             primitives[token].body(self)
         -- Czy token jest liczbą?
         elseif tonumber(token) then self:pushStack(tonumber(token))
-        else return true
+        else error(token .. '?', 0)
         end
     end
 end
@@ -343,8 +355,9 @@ function moonforth:executeLine(line)
     while self.currentInstruction < #(self.currentWordstream and self.dictionary[self.currentWordstream].body or self.wordBuffer) do 
         local token = self:getNextWord()
         local override = self.currentWordstream ~= nil
-        if self:execute(token, override) then 
-            self.printBuffer = self.printBuffer .. token .. '?'
+        local is_correct, msg = pcall(self.execute, self, token, override)
+        if not is_correct then 
+            self.printBuffer = self.printBuffer .. msg
             self.wordBuffer = {}
         end
     end
