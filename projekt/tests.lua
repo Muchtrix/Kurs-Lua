@@ -9,7 +9,6 @@ TestMoonForth = {}
     end
 
     function TestMoonForth:testArithmetic()
-        local res = 
         lu.assertEquals(self.m:executeLine('3 5 + .'), '8 ')
         lu.assertEquals(self.m:executeLine('2 1 - .'), '1 ')
         lu.assertEquals(self.m:executeLine('4 4 * .'), '16 ')
@@ -54,6 +53,8 @@ TestMoonForth = {}
         lu.assertEquals(self.m:executeLine('test-variable ?'), '10 ')
         lu.assertEquals(self.m:executeLine('11 test-variable +!'), '')
         lu.assertEquals(self.m:executeLine('test-variable ?'), '21 ')
+        lu.assertEquals(self.m:executeLine('test-variable @ 10 + test-variable !'), '')
+        lu.assertEquals(self.m:executeLine('test-variable ?'), '31 ')
     end
 
     function TestMoonForth:testFactorial()
