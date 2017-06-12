@@ -278,10 +278,15 @@ moonforth.defaultInit = {
     ': inc 1 + ;',
     ': inc<? inc dup2 < ;',
     'variable i',
-    -- Poniższa implementacja pętli for nie jest zgodna ze standardem, ale chciałem ją i tak pozostawić
+    -- implementacja pętli for
     ': for swap i ! ;', -- (a b --- ) for i in [a, b]
     ": do immediate here r> swap >r >r ;", -- exapmle: : test 0 10 for do i ? done ;
-    ": done immediate ' dup , ' 1 , ' i , ' +! , ' i , ' @ , ' < , ' ?branch , r> r> swap >r here - 1 - , ;"
+    ": done immediate ' dup , ' 1 , ' i , ' +! , ' i , ' @ , ' < , ' ?branch , r> r> swap >r here - 1 - , ' drop , ;",
+    -- pętla for dla zmiany licznika podanej jako 3ci argument
+    'variable delta',
+    ": for? delta ! for ;",
+    ": do? immediate here r> swap >r >r ;",
+    ": done? immediate ' dup , ' delta , ' @ , ' i , ' +! , ' i , ' @ , ' = , ' ?branch , r> r> swap >r here - 1 - , ' drop , ;"
 }
 
 function moonforth:pushStack(value)
