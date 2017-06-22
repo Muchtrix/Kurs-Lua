@@ -1,4 +1,4 @@
-#!/usr/bin/env lua5.3
+#!/usr/bin/env lua
 moonforth = require 'moonforth'
 lu = require 'luaunit'
 
