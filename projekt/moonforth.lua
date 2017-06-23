@@ -356,7 +356,8 @@ moonforth.defaultInit = {
     ": for? delta ! for ;",
     ": do? immediate here r> swap >r >r ;",
     ": done? immediate ' dup , ' delta , ' @ , ' i , ' +! , ' i , ' @ , ' = , ' ?branch , r> r> swap >r here - 1 - , ' drop , ;",
-    ': type dup @ 0= if drop exit then dup @ 1 swap for do over i @ + @ emit done drop ;' -- (addr --- ) drukowanie stringa pod addr
+    ': type dup 0= if drop drop exit then 1 swap for do over i @ + @ emit done drop ;', -- (addr len --- ) drukowanie stringa pod addr
+    ': .type dup @ type ;'
 }
 
 function moonforth:pushStack(value)

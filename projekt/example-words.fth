@@ -4,7 +4,7 @@
 : ascii 32 126 for do i ? i @ 100 < if 32 emit then 58 emit 32 emit i @ emit cr done ;
 
 variable linijka
-: cat begin dup linijka swap read-line nip dup if linijka type cr then not until ; \ (handle --- ) Prints contents of file determined by handle
+: cat begin dup linijka swap read-line nip dup if linijka .type cr then not until close-file ; \ (handle --- ) Prints contents of file determined by handle
 
 variable wiktor
 6 wiktor !
