@@ -22,7 +22,7 @@ local function printTable(table)
 end
 
 local primitives = {
-    -- Instrukcje arytmetyczne
+    -- Słowa arytmetyczne
     ['+'] = {
         body = function(forth)
             local a, b = forth:popStack2()
@@ -88,7 +88,7 @@ local primitives = {
             forth:pushStack(~ forth:popStack())
         end
     },
-    -- Instrukcje We/wy
+    -- Słowa We/wy
     ['.'] = {
         body = function(forth)
             forth.printBuffer = forth.printBuffer .. forth:popStack() .. ' '
@@ -100,7 +100,7 @@ local primitives = {
     ['cr'] = {
         body = function(forth) forth.printBuffer = forth.printBuffer .. '\n' end
     },
-    -- Instrukcje sterujące
+    -- Słowa sterujące
     [':'] = {
         immediate = true,
         body = function(forth)
@@ -114,7 +114,7 @@ local primitives = {
     ['exit'] = {
         body = function(forth)
             local ret = pop(forth.returnStack)
-            forth.currentWordstream, forth.currentInstruction = ret.wordStream, ret.pos
+            forth.currentWordstream, forth.currentInstruction = ret.table, ret.index
         end
     },
     [';'] = {
@@ -148,7 +148,12 @@ local primitives = {
             if forth:popStack() == 0 then forth.currentInstruction = forth.currentInstruction + jumpV end
         end
     },
-    -- Instrukcje modyfikujące stos
+    -- Słowa modyfikujące stos
+    ['clear'] = {
+        body = function(forth)
+            forth.variableStack = {}
+        end
+    },
     ['dup'] = {
         body = function(forth) 
             local a = forth:popStack()
@@ -232,7 +237,71 @@ local primitives = {
             }
         end
     },
-    -- Instrukcje debugujące
+    -- Słowa obsługi plików
+    ['r/o'] = {
+        body = function(forth)
+            forth:pushStack(1)
+        end
+    },
+    ['w/o'] = {
+        body = function(forth)
+            forth:pushStack(2)
+        end
+    },
+    ['open-file'] = {
+        body = function(forth)
+            mode = forth:popStack() == 1 and 'r' or 'w'
+            filename = forth:getNextWord()
+            handle = io.open(filename, mode)
+            if handle then 
+                forth.fileHandles[#forth.fileHandles + 1] = handle
+                forth:pushStack(#forth.fileHandles)
+                forth:pushStack(0)
+            else
+                forth:pushStack(0)
+                forth:pushStack(1)
+            end
+        end
+    },
+    ['close-file'] = {
+        body = function(forth)
+            handle = forth:popStack()
+            io.close(forth.fileHandles[handle])
+            forth.fileHandles[handle] = nil
+        end
+    },
+    ['read-line'] = {
+        body = function(forth)
+            handle = forth.fileHandles[forth:popStack()]
+            variableAddr = forth:popStack()
+            line = handle:read()
+            if line then
+                forth:pushStack(#line)
+                forth:pushStack(1)
+                forth.dictionary[variableAddr.table].body[variableAddr.index] = #line
+                for i = 1, #line do
+                    letter = line:sub(i, i)
+                    forth.dictionary[variableAddr.table].body[variableAddr.index + i] = letter:byte()
+                end
+            else
+                forth:pushStack(0)
+                forth:pushStack(0)
+            end
+        end
+    },
+    ['write-line'] = {
+        body = function(forth)
+            handle = forth.fileHandles[forth:popStack()]
+            variable = forth:popStack()
+            length = forth.dictionary[variable.table].body[variable.index]
+            line = ''
+            for i = 1, length do
+                line = line .. string.char(forth.dictionary[variable.table].body[variable.index + i])
+            end
+            handle:write(line .. '\n')
+        end
+    },
+    -- Słowa debugujące
     ['stack'] = {
         immediate = true,
         body = function(forth)
@@ -286,7 +355,8 @@ moonforth.defaultInit = {
     'variable delta',
     ": for? delta ! for ;",
     ": do? immediate here r> swap >r >r ;",
-    ": done? immediate ' dup , ' delta , ' @ , ' i , ' +! , ' i , ' @ , ' = , ' ?branch , r> r> swap >r here - 1 - , ' drop , ;"
+    ": done? immediate ' dup , ' delta , ' @ , ' i , ' +! , ' i , ' @ , ' = , ' ?branch , r> r> swap >r here - 1 - , ' drop , ;",
+    ': type dup @ 0= if drop exit then dup @ 1 swap for do over i @ + @ emit done drop ;' -- (addr --- ) drukowanie stringa pod addr
 }
 
 function moonforth:pushStack(value)
@@ -340,7 +410,7 @@ function moonforth:execute(token, overrideCompile)
     else
         -- Czy token jest w słowniku?
         if self.dictionary[token] then
-            push(self.returnStack, {wordStream = self.currentWordstream, pos = self.currentInstruction})
+            push(self.returnStack, pointer(self.currentWordstream, self.currentInstruction))
             self.currentWordstream = token
             self.currentInstruction = 0
         -- Czy token jest prymitywem?
@@ -381,7 +451,8 @@ function moonforth:new(init)
         currentWordstream = nil,
         currentInstruction = 0,
         returnStack = {},
-        printBuffer = ''
+        printBuffer = '',
+        fileHandles = {}
     }
     setmetatable(obj, mt)
     for _, v in ipairs(initialProgram) do obj:executeLine(v) end
