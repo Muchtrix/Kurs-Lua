@@ -17,7 +17,7 @@ int main(){
     lua_State *L;
     L = luaL_newstate();
     luaL_openlibs(L);
-    luaL_dofile(L, "main.lua");
+    luaL_dofile(L, "repl.lua");
     while(true){
         char * linijka = readline(isCompileMode(L) ? "C> " : "I> ");
         lua_getglobal(L, "execLine");

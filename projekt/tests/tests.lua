@@ -1,4 +1,5 @@
 #!/usr/bin/env lua
+package.path = package.path .. ';../?.lua'
 moonforth = require 'moonforth'
 lu = require 'luaunit'
 
@@ -62,6 +63,13 @@ TestMoonForth = {}
         lu.assertEquals(self.m:executeLine('1 fac .'), '1 ')
         lu.assertEquals(self.m:executeLine('3 fac .'), '6 ')
         lu.assertEquals(self.m:executeLine('5 fac .'), '120 ')
+    end
+
+    function TestMoonForth:testReadFile()
+        lu.assertEquals(self.m:executeLine('variable linijka'), '')
+        lu.assertEquals(self.m:executeLine(': cat begin dup linijka swap read-line nip dup if linijka .type cr then not until close-file ;'), '')
+        lu.assertEquals(self.m:executeLine('r/o open-file test_file'), '')
+        lu.assertEquals(self.m:executeLine('drop cat'), 'This is a test msg\n')
     end
 
 os.exit( lu.LuaUnit:runSuite('--output', 'tap') )
