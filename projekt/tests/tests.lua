@@ -67,9 +67,8 @@ TestMoonForth = {}
 
     function TestMoonForth:testReadFile()
         lu.assertEquals(self.m:executeLine('variable linijka'), '')
-        lu.assertEquals(self.m:executeLine(': cat begin dup linijka swap read-line nip dup if linijka .type cr then not until close-file ;'), '')
-        lu.assertEquals(self.m:executeLine('r/o open-file test_file'), '')
-        lu.assertEquals(self.m:executeLine('drop cat'), 'This is a test msg\n')
+        lu.assertEquals(self.m:executeLine('r/o open-file test_file drop'), '')
+        lu.assertEquals(self.m:executeLine('linijka swap read-line drop2 linijka .type 1 close-file'), 'This is a test msg')
     end
 
 os.exit( lu.LuaUnit:runSuite('--output', 'tap') )

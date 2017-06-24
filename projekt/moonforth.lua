@@ -332,6 +332,7 @@ moonforth.defaultInit = {
     ': rot >r swap r> swap ;',
     ': -rot rot rot ;',
     ': dup2 over over ;',
+    ': drop2 drop drop ;',
     ': 0= 0 = ;',
     ': <> = 0= ;',
     ': not 0= ;',
@@ -360,8 +361,8 @@ moonforth.defaultInit = {
     ": for? delta ! for ;",
     ": do? immediate here r> swap >r >r ;",
     ": done? immediate ' dup , ' delta , ' @ , ' i , ' +! , ' i , ' @ , ' = , ' ?branch , r> r> swap >r here - 1 - , ' drop , ;",
-    ': type dup 0= if drop drop exit then 1 swap for do over i @ + @ emit done drop ;', -- (addr len --- ) drukowanie stringa pod addr
-    ': .type dup @ type ;'
+    ': type dup 0= if drop drop exit then 0 swap 1 - for do over i @ + @ emit done drop ;', -- (c-addr len --- ) wypisanie len znaków zaczynając od c-addr
+    ': .type dup @ swap 1 + swap type ;' -- (addr --- ) wypisanie napisu pod addr
 }
 
 function moonforth:pushStack(value)
