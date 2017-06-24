@@ -39,6 +39,8 @@ int main(int argc, char** argv){
             }
 
             plik.close();
+        } else {
+            cout << "File " << argv[i] << " could not be open." << endl ;
         }
     }
     while(true){

@@ -439,7 +439,7 @@ end
 
 function moonforth:executeLine(line)
     self:loadWordBuffer(moonforth.tokenizer(line))
-    self.printBuffer = ""
+    self.printBuffer = ''
 
     while self.currentInstruction < #(self.currentWordstream and self.dictionary[self.currentWordstream].body or self.wordBuffer) do 
         local token = self:getNextWord()
@@ -447,7 +447,7 @@ function moonforth:executeLine(line)
         local is_correct, msg = pcall(self.execute, self, token, override)
         if not is_correct then 
             self.printBuffer = self.printBuffer .. msg
-            break
+            self.wordBuffer = {}
         end
     end
     self.currentInstruction = 0
