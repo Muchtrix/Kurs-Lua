@@ -113,8 +113,12 @@ local primitives = {
     },
     ['exit'] = {
         body = function(forth)
-            local ret = pop(forth.returnStack)
-            forth.currentWordstream, forth.currentInstruction = ret.table, ret.index
+            if #forth.returnStack == 0 then
+                forth.machineOn = false
+            else
+                local ret = pop(forth.returnStack)
+                forth.currentWordstream, forth.currentInstruction = ret.table, ret.index
+            end
         end
     },
     [';'] = {
@@ -453,7 +457,8 @@ function moonforth:new(init)
         currentInstruction = 0,
         returnStack = {},
         printBuffer = '',
-        fileHandles = {}
+        fileHandles = {},
+        machineOn = true
     }
     setmetatable(obj, mt)
     for _, v in ipairs(initialProgram) do obj:executeLine(v) end

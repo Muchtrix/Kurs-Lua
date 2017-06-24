@@ -11,4 +11,5 @@ print [[
 execLine = function(line)
     local res = m:executeLine(line)
     if res ~= '' then print(res) end
+    return m.machineOn
 end
