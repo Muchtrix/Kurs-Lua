@@ -327,40 +327,43 @@ local primitives = {
 }
 
 moonforth.defaultInit = {
-    ': tuck swap >r dup r> swap ;',
-    ': nip swap drop ;',
-    ': rot >r swap r> swap ;',
-    ': -rot rot rot ;',
-    ': dup2 over over ;',
-    ': drop2 drop drop ;',
+    -- słowa manipulijące stosem
+    ': tuck swap >r dup r> swap ;', -- (a b   --- b a b)
+    ': nip swap drop ;',            -- ( a b  --- b)
+    ': rot >r swap r> swap ;',      -- (a b c --- b c a)
+    ': -rot rot rot ;',             -- (a b c --- c a b)
+    ': dup2 over over ;',           -- (a b   --- a b a b)
+    ': drop2 drop drop ;',          -- (a b   --- )
+    -- słowa operacji logicznych
     ': 0= 0 = ;',
     ': <> = 0= ;',
     ': not 0= ;',
     ': >= < not ;',
     ': <= > not ;',
     ': logical not not ;',
+    ': min dup2 > if swap then drop ;',
+    ': max dup2 < if swap then drop ;',
+    -- słowa na zmiennych
+    ': ? @ . ;',
+    ': +! dup -rot @ + swap ! ;',
+    -- słowa warunkowe
     ": >mark ' 0 , here ;",
     ": if immediate ' ?branch , >mark r> swap >r >r ;",
     ": else immediate ' branch , r> r> swap >r >mark r> swap >r >r swap dup here swap - swap ! ;",
     ': then immediate r> r> swap >r dup here swap - swap ! ;',
     ': begin immediate here r> swap >r >r ;',
     ": until immediate ' ?branch , r> r> swap >r here - 1 - , ;",
-    ': ? @ . ;',
-    ': +! dup -rot @ + swap ! ;',
-    ': min dup2 > if swap then drop ;',
-    ': max dup2 < if swap then drop ;',
-    ': inc 1 + ;',
-    ': inc<? inc dup2 < ;',
-    'variable i',
     -- implementacja pętli for
+    'variable i',
     ': for swap i ! ;', -- (a b --- ) for i in [a, b]
     ": do immediate here r> swap >r >r ;", -- exapmle: : test 0 10 for do i ? done ;
     ": done immediate ' dup , ' 1 , ' i , ' +! , ' i , ' @ , ' < , ' ?branch , r> r> swap >r here - 1 - , ' drop , ;",
     -- pętla for dla zmiany licznika podanej jako 3ci argument
     'variable delta',
-    ": for? delta ! for ;",
+    ": for? delta ! for ;", -- example: : test 0 10 2 for? do? i ? done? ; --> 0 2 4 6 8
     ": do? immediate here r> swap >r >r ;",
     ": done? immediate ' dup , ' delta , ' @ , ' i , ' +! , ' i , ' @ , ' = , ' ?branch , r> r> swap >r here - 1 - , ' drop , ;",
+    -- słowa na napisach
     ': type dup 0= if drop drop exit then 0 swap 1 - for do over i @ + @ emit done drop ;', -- (c-addr len --- ) wypisanie len znaków zaczynając od c-addr
     ': .type dup @ swap 1 + swap type ;' -- (addr --- ) wypisanie napisu pod addr
 }
