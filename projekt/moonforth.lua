@@ -447,7 +447,7 @@ function moonforth:executeLine(line)
         local is_correct, msg = pcall(self.execute, self, token, override)
         if not is_correct then 
             self.printBuffer = self.printBuffer .. msg
-            self.wordBuffer = {}
+            break
         end
     end
     self.currentInstruction = 0
