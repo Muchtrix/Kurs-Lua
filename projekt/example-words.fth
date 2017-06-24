@@ -15,13 +15,6 @@ variable wiktor
 111 wiktor 5 + !
 114 wiktor 6 + !
 
-: compare dup2 @ swap @ = \ (addr1 addr2 --- x) Compares 2 strings at given adresses
-    if
-        dup @ 1 swap for do
-            -rot dup2 i @ + @ swap i @ + @ <> if drop drop2 0 exit then rot
-        done drop2 1
-    else drop2 0 then ;
-
 : find-word \ (addr u --- u) 
     swap dup @ \ (u addr len)
     -rot \ (len u addr)

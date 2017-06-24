@@ -88,7 +88,7 @@ local primitives = {
             forth:pushStack(~ forth:popStack())
         end
     },
-    -- Słowa We/wy
+    -- Słowa drukujące na ekran
     ['.'] = {
         body = function(forth)
             forth.printBuffer = forth.printBuffer .. forth:popStack() .. ' '
@@ -193,11 +193,6 @@ local primitives = {
     ['>r'] = {
         body = function(forth)
             push(forth.returnStack, forth:popStack())
-        end
-    },
-    ["'('"] = {
-        body = function(forth)
-            forth:pushStack(('('):byte())
         end
     },
     ['here'] = {
@@ -369,6 +364,13 @@ moonforth.defaultInit = {
     ': copy 1 swap for do -rot dup2 swap @ swap ! 1 + swap 1 + swap rot done drop2 ;', -- (c-addr1 c-addr2 u ---) kopiuje u znaków z c-addr1 do c-addr2
     ': copy-str dup2 swap ! swap 1 + swap copy ;', -- (c-addr addr u ---) kopiuje u znaków z c-addr do nowego napisu w addr
     ': copy-str-str swap dup @ swap 1 + -rot copy-str ;', -- (addr1 addr2 ---) kopiuje napis z addr1 do addr2
+    [[: equal dup2 @ swap @ = if
+            dup @ 0= if 
+                drop2 1 exit then
+            dup @ 1 swap for do
+                -rot dup2 i @ + @ swap i @ + @ <> if drop drop2 0 exit then rot
+            done drop2 1
+        else drop2 0 then ;]], -- (addr1 addr2 --- u) sprawdza równość napisów pod zadanymi adresami
 }
 
 function moonforth:pushStack(value)
