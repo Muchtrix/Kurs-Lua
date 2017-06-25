@@ -91,14 +91,30 @@ local primitives = {
     -- Słowa drukujące na ekran
     ['.'] = {
         body = function(forth)
-            forth.printBuffer = forth.printBuffer .. forth:popStack() .. ' '
+            forth.outputBuffer = forth.outputBuffer .. forth:popStack() .. ' '
+        end
+    },
+    ['..'] = {
+        body = function(forth)
+            forth.outputBuffer = forth.outputBuffer .. forth:getNextWord()
+        end
+    },
+    ['."'] = {
+        immediate = true,
+        body = function(forth)
+            str = ''
+            tmp = forth:getNextWord()
+            while tmp:sub(-1, -1) ~= '"' do str, tmp = str .. tmp .. ' ', forth:getNextWord() end
+            str = str .. tmp:sub(1, -2)
+            forth:compileToken('..')
+            forth:compileToken(str)
         end
     },
     ['emit'] = {
-        body = function(forth) forth.printBuffer = forth.printBuffer .. string.char(forth:popStack()) end
+        body = function(forth) forth.outputBuffer = forth.outputBuffer .. string.char(forth:popStack()) end
     },
     ['cr'] = {
-        body = function(forth) forth.printBuffer = forth.printBuffer .. '\n' end
+        body = function(forth) forth.outputBuffer = forth.outputBuffer .. '\n' end
     },
     -- Słowa sterujące
     [':'] = {
@@ -210,6 +226,7 @@ local primitives = {
             forth:compileToken(forth:popStack())
         end
     },
+    -- Słowa obsługi zmiennych
     ['@'] = {
         body = function(forth)
             local adress = forth:popStack()
@@ -234,6 +251,19 @@ local primitives = {
                     'exit'
                 }
             }
+        end
+    },
+    ['s"'] = {
+        body = function(forth)
+            addr = forth:popStack()
+            str = ''
+            tmp = forth:getNextWord()
+            while tmp:sub(-1, -1) ~= '"' do str, tmp = str .. tmp .. ' ', forth:getNextWord() end
+            str = str .. tmp:sub(1, -2)
+            forth.dictionary[addr.table].body[addr.index] = #str
+            for i = 1, #str do
+                forth.dictionary[addr.table].body[addr.index + i] = str:sub(i,i):byte()
+            end
         end
     },
     -- Słowa obsługi plików
@@ -279,8 +309,7 @@ local primitives = {
                 forth:pushStack(1)
                 forth.dictionary[variableAddr.table].body[variableAddr.index] = #line
                 for i = 1, #line do
-                    letter = line:sub(i, i)
-                    forth.dictionary[variableAddr.table].body[variableAddr.index + i] = letter:byte()
+                    forth.dictionary[variableAddr.table].body[variableAddr.index + i] = line:sub(i, i):byte()
                 end
             else
                 forth:pushStack(0)
@@ -405,11 +434,12 @@ end
 
 function moonforth.tokenizer(line)
     local res = {}
-    for token in string.gmatch(line, '([^%s]+)') do res[#res + 1] = token:lower() end
+    for token in string.gmatch(line, '([^%s]+)') do res[#res + 1] = token end
     return res
 end
 
 function moonforth:execute(token, overrideCompile)
+    token = token:lower()
     overrideCompile = overrideCompile or false
     if self.compileMode and (not overrideCompile) then 
         if tonumber(token) then 
@@ -439,19 +469,19 @@ end
 
 function moonforth:executeLine(line)
     self:loadWordBuffer(moonforth.tokenizer(line))
-    self.printBuffer = ''
+    self.outputBuffer = ''
 
     while self.currentInstruction < #(self.currentWordstream and self.dictionary[self.currentWordstream].body or self.wordBuffer) do 
         local token = self:getNextWord()
         local override = self.currentWordstream ~= nil
         local is_correct, msg = pcall(self.execute, self, token, override)
         if not is_correct then 
-            self.printBuffer = self.printBuffer .. msg
+            self.outputBuffer = self.outputBuffer .. msg
             self.wordBuffer = {}
         end
     end
     self.currentInstruction = 0
-    return self.printBuffer
+    return self.outputBuffer
 end
 
 function moonforth:new(init)
@@ -465,7 +495,7 @@ function moonforth:new(init)
         currentWordstream = nil,
         currentInstruction = 0,
         returnStack = {},
-        printBuffer = '',
+        outputBuffer = '',
         fileHandles = {},
         machineOn = true
     }

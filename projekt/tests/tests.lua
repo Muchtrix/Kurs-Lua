@@ -58,6 +58,18 @@ TestMoonForth = {}
         lu.assertEquals(self.m:executeLine('test-variable ?'), '31 ')
     end
 
+    function TestMoonForth:testStringVariable()
+        lu.assertEquals(self.m:executeLine('variable line'), '')
+        lu.assertEquals(self.m:executeLine('line s" This is a test line"'), '')
+        lu.assertEquals(self.m:executeLine('line .type'), 'This is a test line')
+    end
+
+    function TestMoonForth:testString()
+        lu.assertEquals(self.m:executeLine(': test 0= if ." Zero!" else ." Nie zero!" then ;'), '')
+        lu.assertEquals(self.m:executeLine('0 test'), 'Zero!')
+        lu.assertEquals(self.m:executeLine('1 test'), 'Nie zero!')
+    end
+
     function TestMoonForth:testFactorial()
         lu.assertEquals(self.m:executeLine(': fac dup 1 = if exit else dup 1 - fac * then ;'), '')
         lu.assertEquals(self.m:executeLine('1 fac .'), '1 ')
