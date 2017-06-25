@@ -65,7 +65,7 @@ local primitives = {
             forth:pushStack(a < b and 1 or 0)
         end
     },
-    ['and'] = {
+    ['and'] = { -- Uwaga: operacje bitowe
         body = function(forth)
             local a, b = forth:popStack2()
             forth:pushStack(a & b)
@@ -89,17 +89,17 @@ local primitives = {
         end
     },
     -- Słowa drukujące na ekran
-    ['.'] = {
+    ['.'] = { -- (x --- ) Pisze x na ekran
         body = function(forth)
             forth.outputBuffer = forth.outputBuffer .. forth:popStack() .. ' '
         end
     },
-    ['..'] = {
+    ['..'] = { -- ( --- ) Wypisuje następne słowo na ekran
         body = function(forth)
             forth.outputBuffer = forth.outputBuffer .. forth:getNextWord()
         end
     },
-    ['."'] = {
+    ['."'] = { -- ( --- ) (Słowo kompilacji) Wypisuje na ekran napis zakończony "
         immediate = true,
         body = function(forth)
             str = ''
@@ -110,14 +110,14 @@ local primitives = {
             forth:compileToken(str)
         end
     },
-    ['emit'] = {
+    ['emit'] = { -- ( c --- ) Wypisuje znak o kodzie c
         body = function(forth) forth.outputBuffer = forth.outputBuffer .. string.char(forth:popStack()) end
     },
-    ['cr'] = {
+    ['cr'] = { -- ( --- ) Wstawia znak nowej linii
         body = function(forth) forth.outputBuffer = forth.outputBuffer .. '\n' end
     },
     -- Słowa sterujące
-    [':'] = {
+    [':'] = { -- ( --- ) Rozpoczyna definicję nowego słowa
         immediate = true,
         body = function(forth)
             local newWord = forth:getNextWord()
@@ -127,7 +127,8 @@ local primitives = {
             forth.dictionary[newWord] = {immediate = false, body = {}}
         end
     },
-    ['exit'] = {
+    ['exit'] = { -- ( --- ) W trybie interpretacji kończy działanie maszyny.
+                 -- W trybie kompilacji wychodzi z aktualnie wykonywanego słowa
         body = function(forth)
             if #forth.returnStack == 0 then
                 forth.machineOn = false
@@ -137,63 +138,63 @@ local primitives = {
             end
         end
     },
-    [';'] = {
+    [';'] = { -- ( --- ) Kończy definicję słowa
         immediate = true,
         body = function(forth)
             forth:compileToken('exit')
             forth.compileMode = false
         end
     },
-    ['immediate'] = {
+    ['immediate'] = { -- ( --- ) Zmienia definowane słowo na słowo natychmiastowe
         immediate = true,
         body = function(forth)
             forth.dictionary[forth.dictionaryPointer.table].immediate = true
         end
     },
-    ['\\'] = {
+    ['\\'] = { -- ( --- ) Komentarz linijkowy
         immediate = true,
         body = function(forth)
             forth.wordBuffer = {}
         end
     },
-    ['branch'] = {
+    ['branch'] = { -- ( --- ) Skok bezwarunkowy
         body = function(forth)
             local jumpV = forth:getNextWord()
             forth.currentInstruction = forth.currentInstruction + jumpV
         end
     },
-    ['?branch'] = {
+    ['?branch'] = { -- ( x --- ) Skok warunkowy gdy x == 0
         body = function(forth)
             local jumpV = forth:getNextWord()
             if forth:popStack() == 0 then forth.currentInstruction = forth.currentInstruction + jumpV end
         end
     },
     -- Słowa modyfikujące stos
-    ['clear'] = {
+    ['clear'] = { -- (wszystko --- ) Czyści stos zmiennych
         body = function(forth)
             forth.variableStack = {}
         end
     },
-    ['dup'] = {
+    ['dup'] = { -- ( x --- x x ) Podwaja zmienną na szczycie stosu
         body = function(forth) 
             local a = forth:popStack()
              forth:pushStack(a)
              forth:pushStack(a)
         end
     },
-    ['drop'] = {
+    ['drop'] = { -- ( x --- ) Usuwa zmienną ze szczytu stosu
         body = function(forth)
             forth:popStack()
         end
     },
-    ['swap'] = {
+    ['swap'] = { -- ( a b --- b a ) Zamienia miejscami 2 zmienne na szczycie
         body = function(forth)
             local a, b = forth:popStack2()
             forth:pushStack(b)
             forth:pushStack(a)
         end
     },
-    ['over'] = {
+    ['over'] = { -- ( a b --- a b a )
         body = function(forth)
             local a, b = forth:popStack2()
             forth:pushStack(a)
@@ -201,45 +202,45 @@ local primitives = {
             forth:pushStack(a)
         end
     },
-    ['r>'] = {
+    ['r>'] = { -- ( --- x ) (R: x --- ) Przenosi zmienną ze stosu powrotów na stos zmiennych
         body = function(forth)
             forth:pushStack(pop(forth.returnStack))
         end
     },
-    ['>r'] = {
+    ['>r'] = { -- ( x --- ) (R: --- x ) Przenosi zmienną ze stosu zmiennych na stos powrotów
         body = function(forth)
             push(forth.returnStack, forth:popStack())
         end
     },
-    ['here'] = {
+    ['here'] = { -- ( --- addr ) Umieszcza na stosie wskaźnik aktualnie kompilowanego słowa (dla instrukcji warunkowych)
         body = function(forth)
             forth:pushStack(pointer(forth.dictionaryPointer.table, forth.dictionaryPointer.index))
         end
     },
-    ["'"] = {
+    ["'"] = { -- ( --- x ) Umieszcza następne słowo na stosie
         body = function(forth)
             forth:pushStack(forth:getNextWord())
         end
     },
-    [','] = {
+    [','] = { -- ( x --- ) Umieszcza szczyt stosu w aktualnej definicji
         body = function(forth)
             forth:compileToken(forth:popStack())
         end
     },
     -- Słowa obsługi zmiennych
-    ['@'] = {
+    ['@'] = { -- ( addr --- x ) Umieszcza na stosie zawartość zmiennej pod addr
         body = function(forth)
             local adress = forth:popStack()
             forth:pushStack(forth.dictionary[adress.table].body[adress.index])
         end
     },
-    ['!'] = {
+    ['!'] = { -- (x addr --- ) Przypisuje zmiennej pod addr wartość x
         body = function(forth)
             local x, adress = forth:popStack2()
             forth.dictionary[adress.table].body[adress.index] = x
         end
     },
-    ['variable'] = {
+    ['variable'] = { -- ( --- ) Definicja nowej zmiennej
         immediate = true,
         body = function(forth)
             local varName = forth:getNextWord()
@@ -253,7 +254,7 @@ local primitives = {
             }
         end
     },
-    ['s"'] = {
+    ['s"'] = { -- ( addr --- ) Umieszcza w zmiennej pod addr napis zakończony "
         body = function(forth)
             addr = forth:popStack()
             str = ''
@@ -267,17 +268,18 @@ local primitives = {
         end
     },
     -- Słowa obsługi plików
-    ['r/o'] = {
+    ['r/o'] = { -- ( --- 1 ) Umieszcza na stosie wskaźnik trybu read-only
         body = function(forth)
             forth:pushStack(1)
         end
     },
-    ['w/o'] = {
+    ['w/o'] = { -- ( --- 2 ) Umieszcza na stosie wskaźnik trybu write-only
         body = function(forth)
             forth:pushStack(2)
         end
     },
-    ['open-file'] = {
+    ['open-file'] = { -- (fam --- handle status ) Otwiera plik o nazwie w następnym słowie w trybie fam.
+                      -- Umieszcza na stosie uchwyt do pliku i 0 jeśli otwarcie się powiodło, w.p.p. 1
         body = function(forth)
             mode = forth:popStack() == 1 and 'r' or 'w'
             filename = forth:getNextWord()
@@ -292,14 +294,16 @@ local primitives = {
             end
         end
     },
-    ['close-file'] = {
+    ['close-file'] = { -- (handle --- ) Zamyka plik o uchwycie handle
         body = function(forth)
             handle = forth:popStack()
             io.close(forth.fileHandles[handle])
             forth.fileHandles[handle] = nil
         end
     },
-    ['read-line'] = {
+    ['read-line'] = { -- (addr handle --- len status) Wczytuje linijkę tekstu z pliku handle do zmiennej addr.
+                      -- Jeśli odczyt się udał, len to liczba wczytanych znaków, status to 1.
+                      -- w.p.p. len = status = 0
         body = function(forth)
             handle = forth.fileHandles[forth:popStack()]
             variableAddr = forth:popStack()
@@ -317,7 +321,7 @@ local primitives = {
             end
         end
     },
-    ['write-line'] = {
+    ['write-line'] = { -- (addr handle --- ) Zapisuje linijkę tekstu ze zmiennej pod addr do pliku handle
         body = function(forth)
             handle = forth.fileHandles[forth:popStack()]
             variable = forth:popStack()
@@ -330,7 +334,7 @@ local primitives = {
         end
     },
     -- Słowa debugujące
-    ['stack'] = {
+    ['stack'] = { -- ( --- ) Wypisuje na ekran zawartość stosu zmiennych
         immediate = true,
         body = function(forth)
             print '------- Stack dump ------'
@@ -341,7 +345,7 @@ local primitives = {
             print '--- End of stack dump ---'
         end
     },
-    ['word-info'] = {
+    ['word-info'] = { -- ( --- ) Wypisuje informacje o następnym słowie
         immediate = true,
         body = function(forth)
             local word = forth:getNextWord()
